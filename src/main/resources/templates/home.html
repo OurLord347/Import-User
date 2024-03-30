@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<h2>Импорт пользователей</h2>
+<form action="/download-excel" method="post">
+  Количество данных: <input type="number" name="number" min="1" max="1000000">
+  <button type="submit">Сгенерировать Excel</button>
+</form>
+<h2>Загрузка Excel-файла</h2>
+<form action="/upload-excel" method="post" enctype="multipart/form-data">
+  <input type="file" name="file">
+  <button type="submit">Отправить</button>
+</form>
+</body>
+</html>
