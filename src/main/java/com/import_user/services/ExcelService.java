@@ -3,6 +3,7 @@ package com.import_user.services;
 import com.import_user.entity.Company;
 import com.import_user.entity.Position;
 import com.import_user.entity.User;
+import com.import_user.validators.UserValidate;
 import com.monitorjbl.xlsx.StreamingReader;
 import jakarta.servlet.http.HttpServletResponse;
 import net.datafaker.Faker;
@@ -92,6 +93,10 @@ public class ExcelService {
                     }
 
                     if (r.getRowNum() == 0) {
+                        continue;
+                    }
+                    //Если не совершеннолетний то пропустить
+                    if(!UserValidate.isAdult(r.getCell(3).getDateCellValue())){
                         continue;
                     }
                     executor.execute(()->{
