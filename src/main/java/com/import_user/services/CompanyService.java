@@ -12,7 +12,7 @@ public class CompanyService {
     @Autowired
     private CompanyRepository companyRepository;
 
-    public Company getByName(String name){
+    public synchronized Company getByName(String name){
         Company company = null;
         List<Company> companyList = companyRepository.findByName(name);
         if (companyList.size() == 0){

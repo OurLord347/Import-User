@@ -13,7 +13,7 @@ public class PositionService {
     @Autowired
     private PositionRepository positionRepository;
 
-    public Position getByName(String name){
+    public synchronized Position getByName(String name){
         Position position = null;
         List<Position> positionList = positionRepository.findByName(name);
         if (positionList.size() == 0){

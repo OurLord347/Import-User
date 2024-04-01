@@ -21,6 +21,8 @@ import org.apache.poi.ss.usermodel.Workbook;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 @Service
@@ -78,24 +80,38 @@ public class ExcelService {
                     .rowCacheSize(100)    // number of rows to keep in memory (defaults to 10)
                     .bufferSize(4096)     // buffer size to use when reading InputStream to file (defaults to 1024)
                     .open(file.getInputStream());            // InputStream or File for XLSX file (required)
+            ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+            long maxMemory = 500 * 1024 * 1024; // Ограничение на память в 500 МБ
 
             for (Sheet sheet : workbook) {
+
                 for (Row r : sheet) {
+
+                    //Ограничение по памяти на 500 мб
+                    while (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory() > maxMemory) {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+
                     if (r.getRowNum() == 0) {
                         continue;
                     }
-
-                    Company company = companyRepository.getByName(r.getCell(4).getStringCellValue());
-                    Position position = positionRepository.getByName(r.getCell(5).getStringCellValue());
-                    User user = userRepository.getById((long) r.getCell(0).getNumericCellValue());
-                    user.setId((long) r.getCell(0).getNumericCellValue());
-                    user.setName(r.getCell(1).getStringCellValue());
-                    user.setLastName(r.getCell(2).getStringCellValue());
-                    user.setBirthday(r.getCell(3).getDateCellValue());
-                    user.setCompany(company);
-                    user.setPosition(position);
-                    user.setSalary((int) r.getCell(0).getNumericCellValue());
-                    userRepository.getSave(user);
+                    executor.execute(()->{
+                        Company company = companyRepository.getByName(r.getCell(4).getStringCellValue());
+                        Position position = positionRepository.getByName(r.getCell(5).getStringCellValue());
+                        User user = userRepository.getById((long) r.getCell(0).getNumericCellValue());
+                        user.setId((long) r.getCell(0).getNumericCellValue());
+                        user.setName(r.getCell(1).getStringCellValue());
+                        user.setLastName(r.getCell(2).getStringCellValue());
+                        user.setBirthday(r.getCell(3).getDateCellValue());
+                        user.setCompany(company);
+                        user.setPosition(position);
+                        user.setSalary((int) r.getCell(0).getNumericCellValue());
+                        userRepository.getSave(user);
+                    });
                 }
             }
         } catch (Exception e) {

@@ -13,7 +13,7 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-    public User getById(long id){
+    public synchronized User getById(long id){
         User user = userRepository.findById(id);
         if (user == null){
             user = new User();
@@ -21,7 +21,7 @@ public class UserService {
         return user;
     }
 
-    public User getSave(User user){
+    public synchronized User getSave(User user){
         userRepository.save(user);
         return user;
 
