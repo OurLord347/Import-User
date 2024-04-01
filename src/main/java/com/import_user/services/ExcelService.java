@@ -1,5 +1,12 @@
 package com.import_user.services;
 
+import com.import_user.entity.Company;
+import com.import_user.entity.Position;
+import com.import_user.entity.User;
+import com.import_user.repository.CompanyRepository;
+import com.import_user.repository.PositionRepository;
+import com.import_user.repository.UserRepository;
+import com.monitorjbl.xlsx.StreamingReader;
 import jakarta.servlet.http.HttpServletResponse;
 import net.datafaker.Faker;
 import org.apache.poi.ss.usermodel.Cell;
@@ -7,12 +14,24 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import org.apache.poi.ss.usermodel.Workbook;
 import java.io.IOException;
+import java.util.Date;
+import java.util.List;
 
 
-
+@Service
 public class ExcelService {
+    @Autowired
+    private UserService userRepository;
+    @Autowired
+    private CompanyService companyRepository;
+    @Autowired
+    private PositionService positionRepository;
+
     public static void generateExcelUsers(HttpServletResponse response, int countRow) {
         try {
             Faker faker = new Faker();
@@ -48,6 +67,47 @@ public class ExcelService {
                 workbook.write(response.getOutputStream());
             }
         } catch (IOException ignored) {
+        }
+    }
+
+    public void saveUsers(MultipartFile file){
+        Workbook workbook = null;
+
+        try {
+            workbook = StreamingReader.builder()
+                    .rowCacheSize(100)    // number of rows to keep in memory (defaults to 10)
+                    .bufferSize(4096)     // buffer size to use when reading InputStream to file (defaults to 1024)
+                    .open(file.getInputStream());            // InputStream or File for XLSX file (required)
+
+            for (Sheet sheet : workbook) {
+                for (Row r : sheet) {
+                    if (r.getRowNum() == 0) {
+                        continue;
+                    }
+
+                    Company company = companyRepository.getByName(r.getCell(4).getStringCellValue());
+                    Position position = positionRepository.getByName(r.getCell(5).getStringCellValue());
+                    User user = userRepository.getById((long) r.getCell(0).getNumericCellValue());
+                    user.setId((long) r.getCell(0).getNumericCellValue());
+                    user.setName(r.getCell(1).getStringCellValue());
+                    user.setLastName(r.getCell(2).getStringCellValue());
+                    user.setBirthday(r.getCell(3).getDateCellValue());
+                    user.setCompany(company);
+                    user.setPosition(position);
+                    user.setSalary((int) r.getCell(0).getNumericCellValue());
+                    userRepository.getSave(user);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Ошибка при чтении Excel файла: " + e.getMessage());
+        } finally {
+            if (workbook != null) {
+                try {
+                    workbook.close();
+                } catch (IOException e) {
+                    System.err.println("Ошибка при закрытии книги Excel: " + e.getMessage());
+                }
+            }
         }
     }
 

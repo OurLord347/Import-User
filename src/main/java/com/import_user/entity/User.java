@@ -1,9 +1,12 @@
 package com.import_user.entity;
+
 import jakarta.persistence.*;
 
-import java.sql.Date;
+import java.util.Date;
 
 import lombok.Data;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Data
 @Entity
@@ -17,16 +20,18 @@ public class User {
     private String name;
 
     @Column(name = "last_name")
-    private String last_name;
+    private String lastName;
 
     @Column(name = "birthday")
     private Date birthday;
 
     @ManyToOne
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "company_id")
     private Company company;
 
     @ManyToOne
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "position")
     private Position position;
 
