@@ -3,9 +3,6 @@ package com.import_user.services;
 import com.import_user.entity.Company;
 import com.import_user.entity.Position;
 import com.import_user.entity.User;
-import com.import_user.repository.CompanyRepository;
-import com.import_user.repository.PositionRepository;
-import com.import_user.repository.UserRepository;
 import com.monitorjbl.xlsx.StreamingReader;
 import jakarta.servlet.http.HttpServletResponse;
 import net.datafaker.Faker;
@@ -19,8 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.apache.poi.ss.usermodel.Workbook;
 import java.io.IOException;
-import java.util.Date;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -81,14 +76,14 @@ public class ExcelService {
                     .bufferSize(4096)     // buffer size to use when reading InputStream to file (defaults to 1024)
                     .open(file.getInputStream());            // InputStream or File for XLSX file (required)
             ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-            long maxMemory = 500 * 1024 * 1024; // Ограничение на память в 500 МБ
+            long maxMemory = 200 * 1024 * 1024; // Ограничение на память в 200 МБ так как в потоках он до сброса памяти умудряется вылезать далеко да 500
 
             for (Sheet sheet : workbook) {
 
                 for (Row r : sheet) {
 
-                    //Ограничение по памяти на 500 мб
-                    while (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory() > maxMemory) {
+                    //Ограничение по памяти
+                    while ((Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory()) > maxMemory) {
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
