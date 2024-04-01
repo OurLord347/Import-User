@@ -3,21 +3,17 @@ package com.import_user.controllers;
 
 import com.import_user.services.ExcelService;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.poi.xssf.streaming.SXSSFWorkbook;
-import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
+import com.monitorjbl.xlsx.StreamingReader;
 
 @Controller
 public class MainController {
@@ -34,22 +30,48 @@ public class MainController {
         response.setHeader("Content-Disposition", "attachment; filename=large-example.xlsx");
         ExcelService.generateExcelUsers(response, number);
     }
+
     @PostMapping("/upload-excel")
-    public String uploadExcel(@RequestParam("file") MultipartFile file) throws IOException {
-        try (XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream())) {
-            Sheet sheet = workbook.getSheetAt(0);
+    public String readExcelFileInChunks(@RequestParam("file") MultipartFile file) {
+        Workbook workbook = null;
+        try {
+            long usedMB = (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory())/(1024*1024);
+            System.err.println("Использовано памяти МБ: " + usedMB);
 
-            StringBuilder contentBuilder = new StringBuilder();
+            workbook = StreamingReader.builder()
+                    .rowCacheSize(100)    // number of rows to keep in memory (defaults to 10)
+                    .bufferSize(4096)     // buffer size to use when reading InputStream to file (defaults to 1024)
+                    .open(file.getInputStream());            // InputStream or File for XLSX file (required)
 
-            for (Row row : sheet) {
-                for (Cell cell : row) {
-                    contentBuilder.append(cell.toString()).append(" ");
+
+            usedMB = (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory())/(1024*1024);
+            System.err.println("Использовано памяти МБ: " + usedMB);
+
+            for (Sheet sheet : workbook){
+                System.out.println(sheet.getSheetName());
+                for (Row r : sheet) {
+                    if(r.getRowNum() == 0){
+                        continue;
+                    }
+                    for (Cell c : r) {
+                        System.out.println(c.getStringCellValue());
+                    }
                 }
-                contentBuilder.append("\n");
             }
 
-            String content = contentBuilder.toString();
-            return content;
+            usedMB = (Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory())/(1024*1024);
+            System.err.println("Использовано памяти МБ: " + usedMB);
+        } catch (Exception e) {
+            System.err.println("Ошибка при чтении Excel файла: " + e.getMessage());
+        } finally {
+            if (workbook != null) {
+                try {
+                    workbook.close();
+                } catch (IOException e) {
+                    System.err.println("Ошибка при закрытии книги Excel: " + e.getMessage());
+                }
+            }
         }
+        return "home";
     }
 }

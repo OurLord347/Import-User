@@ -2,11 +2,10 @@ package com.import_user.entity;
 import jakarta.persistence.*;
 
 import java.sql.Date;
-import lombok.Getter;
-import lombok.Setter;
 
-@Getter
-@Setter
+import lombok.Data;
+
+@Data
 @Entity
 @Table(name = "users")
 public class User {
